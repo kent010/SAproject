@@ -2,19 +2,10 @@
 sizeAlgebraic = 16
 sizeStates = 4
 sizeConstants = 32
+
 import sys
 from math import *
 from numpy import *
-
-from SALib.analyze import morris
-from SALib.sample.morris import sample
-from SALib.test_functions import Sobol_G, Ishigami
-from SALib.util import read_param_file
-from SALib.plotting.morris import horizontal_bar_plot, covariance_plot, \
-                                sample_histograms
-import matplotlib.pyplot as plt
-import numpy as np
-
 
 def createLegends():
     legend_states = [""] * sizeStates
@@ -187,35 +178,39 @@ def computeAlgebraic(constants, states, voi):
     algebraic[0] = constants[3]+states[0]*(constants[4]-constants[3])
     return algebraic
 
-def getAmp(voi,algebraic):    
-    idxVMax = np.where(algebraic[0]==np.max(algebraic[0]))[0][0] 
-    idxVMin = np.where(algebraic[0]==np.min(algebraic[0]))[0][0] 
-    np.set_printoptions(precision=14)
-    vMax = algebraic[0][idxVMax]
-    vMin = algebraic[0][idxVMin]
-    vAmp = vMax - vMin
-    tStart = voi[0]
-    tEnd = voi[idxVMax]
-    tGap = tEnd - tStart
+def getAmp(voi,algebraic):
+    """Calculate amplitude of voltage"""
+    idxVMax = where(algebraic[0]==max(algebraic[0]))[0][0]  #find the index of maximum value of voltage
+    idxVMin = where(algebraic[0]==min(algebraic[0]))[0][0]  #find the index of minimum value of voltage
+    set_printoptions(precision=14)
+    vMax = algebraic[0][idxVMax]                            #get the maximum voltage
+    vMin = algebraic[0][idxVMin]                            #get the minimum voltage
+    vAmp = vMax - vMin                                      #calculate the amplitude value
+    tStart = voi[0]                                         #get the time starting from 0
+    tEnd = voi[idxVMax]                                     #get the time ending at the maximum voltage
+    tGap = tEnd - tStart                                    #calculate the duration from the start to the end
     print('vMax = ',vMax, 'vMin = ',vMin, 'vAmp = ',vAmp, 'tGap = ',tGap)
     return vAmp, vMax, vMin, idxVMax, tGap
 
 def getAmpPerc(voi,algebraic,percentage): 
-    vAmp, vMax, vMin, idxVMax, tGap = getAmp(voi, algebraic)   
-    vAmpPerc = vAmp * (1 - percentage) + vMin
-    vAmpLeft = algebraic[0][0:idxVMax]
+    """Calculate amplitude of voltage by different percentages"""
+    vAmp, vMax, vMin, idxVMax, tGap = getAmp(voi, algebraic)    #get the amplitude of voltage
+    vAmpPerc = vAmp * (1 - percentage) + vMin                   #calculate the value of voltage by percentage
+    vAmpLeft = algebraic[0][0:idxVMax]                          #split the voltage array into a left and a right from the maximum point 
     vAmpRight = algebraic[0][idxVMax+1:]
-    idxVStart = (np.abs(vAmpLeft-vAmpPerc)).argmin()
-    idxVEnd = (np.abs(vAmpRight-vAmpPerc)).argmin()
-    tStart = voi[idxVStart]
-    tEnd = voi[idxVEnd]
-    tGap = tEnd - tStart
-    #print('vStart-1',algebraic[0][idxVMax-1])
-    print('vStart',vAmpLeft[idxVStart], 'vEnd',vAmpRight[idxVEnd], 'tStart', tStart, 'tEnd', tEnd)
-    #print('vStart+1',algebraic[0][idxVMax+1])   
-    #print('vEnd-1',vAmpRight[idxVMin-1])
-    
-    return vAmp,tGap
+    idxVStart = (abs(vAmpLeft-vAmpPerc)).argmin()               #calculate which value is closest to the percentage of the voltage and 
+    idxVEnd = (abs(vAmpRight-vAmpPerc)).argmin()                #return the two indexes of the two voltages in the duration
+    tStart = voi[idxVStart]                                     #calculate the time starting at the first value of voltage
+    tEnd = voi[idxVEnd+idxVMax+1]                               #calculate the time ending at the second value of voltage
+    tGap = tEnd - tStart                                        #calculate the duration of the two points
+    #print('vStart-1',algebraic[0][idxVStart-1])                #for testing the voltage, by using the neighboring voltage
+    #print('vStart',algebraic[0][idxVStart])
+    #print('vStart+1',algebraic[0][idxVStart+1])   
+    #print('vEnd-1',vAmpRight[idxVEnd-1])
+    #print('vEnd',vAmpRight[idxVEnd])
+    #print('vEnd+1',vAmpRight[idxVEnd+1])    
+    print('vStart = ',vAmpLeft[idxVStart], 'vEnd = ',vAmpRight[idxVEnd], 'tStart = ', tStart, 'tEnd = ', tEnd)
+    return vAmpLeft[idxVStart], vAmpRight[idxVEnd], tStart, tEnd, tGap
 
 def custom_piecewise(cases):
     """Compute result of a piecewise function"""
@@ -228,7 +223,7 @@ def solve_model():
     (init_states, constants) = initConsts()
 
     # Set timespan to solve over
-    voi = linspace(0, 1000, 1200)
+    voi = linspace(0, 1000, 20000)
 
     # Construct ODE object to solve
     r = ode(computeRates)
