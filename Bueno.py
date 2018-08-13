@@ -2,10 +2,12 @@
 sizeAlgebraic = 16
 sizeStates = 4
 sizeConstants = 32
-
 import sys
 from math import *
 from numpy import *
+import random
+import pylab
+
 
 def createLegends():
     legend_states = [""] * sizeStates
@@ -21,9 +23,9 @@ def createLegends():
     legend_algebraic[0] = "Vm in component membrane (mV)"
     legend_constants[3] = "V_0 in component membrane (mV)"
     legend_constants[4] = "V_fi in component membrane (mV)"
-    legend_algebraic[8] = "J_fi in component fast_inward_current (per_ms)" # Na
-    legend_algebraic[14] = "J_so in component slow_outward_current (per_ms)" # K
-    legend_algebraic[15] = "J_si in component slow_inward_current (per_ms)" # Ca
+    legend_algebraic[8] = "J_fi in component fast_inward_current (per_ms)"  # Na
+    legend_algebraic[14] = "J_so in component slow_outward_current (per_ms)"  # K
+    legend_algebraic[15] = "J_si in component slow_inward_current (per_ms)"  # Ca
     legend_algebraic[1] = "J_stim in component membrane (per_ms)"
     legend_algebraic[2] = "m in component m (dimensionless)"
     legend_constants[5] = "u_m in component m (dimensionless)"
@@ -72,22 +74,23 @@ def createLegends():
     legend_rates[3] = "d/dt s in component slow_inward_current_s_gate (dimensionless)"
     return (legend_states, legend_algebraic, legend_voi, legend_constants)
 
+
 def initConsts():
     constants = [0.0] * sizeConstants; states = [0.0] * sizeStates;
-    constants[0] = 1        # epi in component environment (dimensionless)
-    constants[1] = 0        # endo in component environment (dimensionless)
-    constants[2] = 0        # mcell in component environment (dimensionless)
-    states[0] = 0           # u in component membrane (dimensionless)
-    constants[3] = -83      # V_0 in component membrane (mV)
-    constants[4] = 2.7      # V_fi in component membrane (mV)
-    constants[5] = 0.3      # u_m in component m (dimensionless)
-    constants[6] = 0.13     # u_p in component p (dimensionless)
-    states[1] = 1           # v in component fast_inward_current_v_gate (dimensionless)
-    constants[7] = 1.45     # tau_v_plus in component fast_inward_current_v_gate (ms)
-    states[2] = 1           # w in component slow_inward_current_w_gate (dimensionless)
-    states[3] = 0           # s in component slow_inward_current_s_gate (dimensionless)
-    constants[8] = 2.7342   # tau_s1 in component slow_inward_current_s_gate (ms)
-    constants[9] = 2.0994   # k_s in component slow_inward_current_s_gate (dimensionless)
+    constants[0] = 1  # epi in component environment (dimensionless)
+    constants[1] = 0  # endo in component environment (dimensionless)
+    constants[2] = 0  # mcell in component environment (dimensionless)
+    states[0] = 0  # u in component membrane (dimensionless)
+    constants[3] = -83  # V_0 in component membrane (mV)
+    constants[4] = 2.7  # V_fi in component membrane (mV)
+    constants[5] = 0.3  # u_m in component m (dimensionless)
+    constants[6] = 0.13  # u_p in component p (dimensionless)
+    states[1] = 1  # v in component fast_inward_current_v_gate (dimensionless)
+    constants[7] = 1.45  # tau_v_plus in component fast_inward_current_v_gate (ms)
+    states[2] = 1  # w in component slow_inward_current_w_gate (dimensionless)
+    states[3] = 0  # s in component slow_inward_current_s_gate (dimensionless)
+    constants[8] = 2.7342  # tau_s1 in component slow_inward_current_s_gate (ms)
+    constants[9] = 2.0994  # k_s in component slow_inward_current_s_gate (dimensionless)
     constants[10] = 0.9087  # u_s in component slow_inward_current_s_gate (dimensionless)
     constants[11] = custom_piecewise([equal(constants[0] , 1.00000), 16.0000 , equal(constants[1] , 1.00000), 2.00000 , True, 4.00000])
     # tau_s2 in component slow_inward_current_s_gate (ms)"
@@ -133,94 +136,101 @@ def initConsts():
     # tau_o2 in component slow_outward_current (ms)"
     return (states, constants)
 
+
 def computeRates(voi, states, constants):
     rates = [0.0] * sizeStates; algebraic = [0.0] * sizeAlgebraic
     algebraic[4] = custom_piecewise([less(states[0] , constants[6]), 0.00000 , True, 1.00000])
-    algebraic[7] = (1.00000-algebraic[4])*constants[8]+algebraic[4]*constants[11]
-    rates[3] = ((1.00000+tanh(constants[9]*(states[0]-constants[10])))/2.00000-states[3])/algebraic[7]
+    algebraic[7] = (1.00000 - algebraic[4]) * constants[8] + algebraic[4] * constants[11]
+    rates[3] = ((1.00000 + tanh(constants[9] * (states[0] - constants[10]))) / 2.00000 - states[3]) / algebraic[7]
     algebraic[2] = custom_piecewise([less(states[0] , constants[5]), 0.00000 , True, 1.00000])
     algebraic[6] = custom_piecewise([less(states[0] , constants[13]), 1.00000 , True, 0.00000])
     algebraic[3] = custom_piecewise([less(states[0] , constants[13]), 0.00000 , True, 1.00000])
-    algebraic[9] = algebraic[3]*constants[12]+(1.00000-algebraic[3])*constants[30]
-    rates[1] = ((1.00000-algebraic[2])*(algebraic[6]-states[1]))/algebraic[9]-(algebraic[2]*states[1])/constants[7]
+    algebraic[9] = algebraic[3] * constants[12] + (1.00000 - algebraic[3]) * constants[30]
+    rates[1] = ((1.00000 - algebraic[2]) * (algebraic[6] - states[1])) / algebraic[9] - (algebraic[2] * states[1]) / constants[7]
     algebraic[5] = custom_piecewise([less(states[0] , constants[15]), 0.00000 , True, 1.00000])
-    algebraic[10] = (1.00000-algebraic[5])*(1.00000-(states[0]*1.00000)/constants[23])+algebraic[5]*constants[24]
-    algebraic[12] = constants[25]+((constants[26]-constants[25])*(1.00000+tanh(constants[27]*(states[0]-constants[28]))))/2.00000
-    rates[2] = ((1.00000-algebraic[5])*(algebraic[10]-states[2]))/algebraic[12]-(algebraic[5]*states[2])/constants[29]
-    algebraic[8] = (-algebraic[2]*states[1]*(states[0]-constants[5])*(constants[17]-states[0]))/constants[16]
-    algebraic[11] = (1.00000-algebraic[5])*constants[14]+algebraic[5]*constants[31]
-    algebraic[13] = constants[18]+((constants[19]-constants[18])*(1.00000+tanh(constants[20]*(states[0]-constants[21]))))/2.00000
-    algebraic[14] = (states[0]*(1.00000-algebraic[4]))/algebraic[11]+algebraic[4]/algebraic[13]
-    algebraic[15] = (-algebraic[4]*states[2]*states[3])/constants[22]
+    algebraic[10] = (1.00000 - algebraic[5]) * (1.00000 - (states[0] * 1.00000) / constants[23]) + algebraic[5] * constants[24]
+    algebraic[12] = constants[25] + ((constants[26] - constants[25]) * (1.00000 + tanh(constants[27] * (states[0] - constants[28])))) / 2.00000
+    rates[2] = ((1.00000 - algebraic[5]) * (algebraic[10] - states[2])) / algebraic[12] - (algebraic[5] * states[2]) / constants[29]
+    algebraic[8] = (-algebraic[2] * states[1] * (states[0] - constants[5]) * (constants[17] - states[0])) / constants[16]
+    algebraic[11] = (1.00000 - algebraic[5]) * constants[14] + algebraic[5] * constants[31]
+    algebraic[13] = constants[18] + ((constants[19] - constants[18]) * (1.00000 + tanh(constants[20] * (states[0] - constants[21])))) / 2.00000
+    algebraic[14] = (states[0] * (1.00000 - algebraic[4])) / algebraic[11] + algebraic[4] / algebraic[13]
+    algebraic[15] = (-algebraic[4] * states[2] * states[3]) / constants[22]
     algebraic[1] = custom_piecewise([greater_equal(voi , 100.000) & less_equal(voi , 101.000), -1.00000 , True, 0.00000])
-    rates[0] = -(algebraic[8]+algebraic[14]+algebraic[15]+algebraic[1])
+    rates[0] = -(algebraic[8] + algebraic[14] + algebraic[15] + algebraic[1])
     return(rates)
+
 
 def computeAlgebraic(constants, states, voi):
     algebraic = array([[0.0] * len(voi)] * sizeAlgebraic)
     states = array(states)
     voi = array(voi)
     algebraic[4] = custom_piecewise([less(states[0] , constants[6]), 0.00000 , True, 1.00000])
-    algebraic[7] = (1.00000-algebraic[4])*constants[8]+algebraic[4]*constants[11]
+    algebraic[7] = (1.00000 - algebraic[4]) * constants[8] + algebraic[4] * constants[11]
     algebraic[2] = custom_piecewise([less(states[0] , constants[5]), 0.00000 , True, 1.00000])
     algebraic[6] = custom_piecewise([less(states[0] , constants[13]), 1.00000 , True, 0.00000])
     algebraic[3] = custom_piecewise([less(states[0] , constants[13]), 0.00000 , True, 1.00000])
-    algebraic[9] = algebraic[3]*constants[12]+(1.00000-algebraic[3])*constants[30]
+    algebraic[9] = algebraic[3] * constants[12] + (1.00000 - algebraic[3]) * constants[30]
     algebraic[5] = custom_piecewise([less(states[0] , constants[15]), 0.00000 , True, 1.00000])
-    algebraic[10] = (1.00000-algebraic[5])*(1.00000-(states[0]*1.00000)/constants[23])+algebraic[5]*constants[24]
-    algebraic[12] = constants[25]+((constants[26]-constants[25])*(1.00000+tanh(constants[27]*(states[0]-constants[28]))))/2.00000
-    algebraic[8] = (-algebraic[2]*states[1]*(states[0]-constants[5])*(constants[17]-states[0]))/constants[16]
-    algebraic[11] = (1.00000-algebraic[5])*constants[14]+algebraic[5]*constants[31]
-    algebraic[13] = constants[18]+((constants[19]-constants[18])*(1.00000+tanh(constants[20]*(states[0]-constants[21]))))/2.00000
-    algebraic[14] = (states[0]*(1.00000-algebraic[4]))/algebraic[11]+algebraic[4]/algebraic[13]
-    algebraic[15] = (-algebraic[4]*states[2]*states[3])/constants[22]
+    algebraic[10] = (1.00000 - algebraic[5]) * (1.00000 - (states[0] * 1.00000) / constants[23]) + algebraic[5] * constants[24]
+    algebraic[12] = constants[25] + ((constants[26] - constants[25]) * (1.00000 + tanh(constants[27] * (states[0] - constants[28])))) / 2.00000
+    algebraic[8] = (-algebraic[2] * states[1] * (states[0] - constants[5]) * (constants[17] - states[0])) / constants[16]
+    algebraic[11] = (1.00000 - algebraic[5]) * constants[14] + algebraic[5] * constants[31]
+    algebraic[13] = constants[18] + ((constants[19] - constants[18]) * (1.00000 + tanh(constants[20] * (states[0] - constants[21])))) / 2.00000
+    algebraic[14] = (states[0] * (1.00000 - algebraic[4])) / algebraic[11] + algebraic[4] / algebraic[13]
+    algebraic[15] = (-algebraic[4] * states[2] * states[3]) / constants[22]
     algebraic[1] = custom_piecewise([greater_equal(voi , 100.000) & less_equal(voi , 101.000), -1.00000 , True, 0.00000])
-    algebraic[0] = constants[3]+states[0]*(constants[4]-constants[3])
+    algebraic[0] = constants[3] + states[0] * (constants[4] - constants[3])
     return algebraic
 
-def getAmp(voi,algebraic):
+
+def getAmp(voi, algebraic):
     """Calculate amplitude of voltage"""
-    idxVMax = where(algebraic[0]==max(algebraic[0]))[0][0]  #find the index of maximum value of voltage
-    idxVMin = where(algebraic[0]==min(algebraic[0]))[0][0]  #find the index of minimum value of voltage
+    idxVMax = where(algebraic[0] == max(algebraic[0]))[0][0]  # Find the index of maximum value of voltage
+    idxVMin = where(algebraic[0] == min(algebraic[0]))[0][0]  # Find the index of minimum value of voltage
     set_printoptions(precision=14)
-    vMax = algebraic[0][idxVMax]                            #get the maximum voltage
-    vMin = algebraic[0][idxVMin]                            #get the minimum voltage
-    vAmp = vMax - vMin                                      #calculate the amplitude value
-    tStart = voi[0]                                         #get the time starting from 0
-    tEnd = voi[idxVMax]                                     #get the time ending at the maximum voltage
-    tGap = tEnd - tStart                                    #calculate the duration from the start to the end
-    print('vMax = ',vMax, 'vMin = ',vMin, 'vAmp = ',vAmp, 'tGap = ',tGap)
+    vMax = algebraic[0][idxVMax]  # Get the maximum voltage
+    vMin = algebraic[0][idxVMin]  # Get the minimum voltage
+    vAmp = vMax - vMin  # Calculate the amplitude value
+    tStart = voi[0]  # Get the time starting from 0
+    tEnd = voi[idxVMax]  # Get the time ending at the maximum voltage
+    tGap = tEnd - tStart  # Calculate the duration from the start to the end
+    # print('vMax = ',vMax, 'vMin = ',vMin, 'vAmp = ',vAmp, 'tGap = ',tGap)
     return vAmp, vMax, vMin, idxVMax, tGap
 
-def getAmpPerc(voi,algebraic,percentage): 
+
+def getAmpPerc(voi, algebraic, percentage): 
     """Calculate amplitude of voltage by different percentages"""
-    vAmp, vMax, vMin, idxVMax, tGap = getAmp(voi, algebraic)    #get the amplitude of voltage
-    vAmpPerc = vAmp * (1 - percentage) + vMin                   #calculate the value of voltage by percentage
-    vAmpLeft = algebraic[0][0:idxVMax]                          #split the voltage array into a left and a right from the maximum point 
-    vAmpRight = algebraic[0][idxVMax+1:]
-    idxVStart = (abs(vAmpLeft-vAmpPerc)).argmin()               #calculate which value is closest to the percentage of the voltage and 
-    idxVEnd = (abs(vAmpRight-vAmpPerc)).argmin()                #return the two indexes of the two voltages in the duration
-    tStart = voi[idxVStart]                                     #calculate the time starting at the first value of voltage
-    tEnd = voi[idxVEnd+idxVMax+1]                               #calculate the time ending at the second value of voltage
-    tGap = tEnd - tStart                                        #calculate the duration of the two points
-    #print('vStart-1',algebraic[0][idxVStart-1])                #for testing the voltage, by using the neighboring voltage
-    #print('vStart',algebraic[0][idxVStart])
-    #print('vStart+1',algebraic[0][idxVStart+1])   
-    #print('vEnd-1',vAmpRight[idxVEnd-1])
-    #print('vEnd',vAmpRight[idxVEnd])
-    #print('vEnd+1',vAmpRight[idxVEnd+1])    
-    print('vStart = ',vAmpLeft[idxVStart], 'vEnd = ',vAmpRight[idxVEnd], 'tStart = ', tStart, 'tEnd = ', tEnd)
-    return vAmpLeft[idxVStart], vAmpRight[idxVEnd], tStart, tEnd, tGap
+    vAmp, vMax, vMin, idxVMax, tGapAmp = getAmp(voi, algebraic)  # Get the amplitude of voltage
+    vAmpPerc = vAmp * (1 - percentage) + vMin  # Calculate the value of voltage by percentage
+    vAmpLeft = algebraic[0][0:idxVMax]  # Split the voltage array into a left and a right from the maximum point 
+    vAmpRight = algebraic[0][idxVMax + 1:]
+    idxVStart = (abs(vAmpLeft - vAmpPerc)).argmin()  # Calculate which value is closest to the percentage of the voltage and 
+    idxVEnd = (abs(vAmpRight - vAmpPerc)).argmin()  # Return the two indexes of the two voltages in the duration
+    tStart = voi[idxVStart]  # Calculate the time starting at the first value of voltage
+    tEnd = voi[idxVEnd + idxVMax + 1]  # Calculate the time ending at the second value of voltage
+    tGap = tEnd - tStart  # Calculate the duration of the two points - 
+    # print('vStart-1',algebraic[0][idxVStart-1])                # for testing the voltage, by using the neighboring voltage
+    # print('vStart',algebraic[0][idxVStart])
+    # print('vStart+1',algebraic[0][idxVStart+1])   
+    # print('vEnd-1',vAmpRight[idxVEnd-1])
+    # print('vEnd',vAmpRight[idxVEnd])
+    # print('vEnd+1',vAmpRight[idxVEnd+1])    
+    # print('vStart = ',vAmpLeft[idxVStart], 'vEnd = ',vAmpRight[idxVEnd], 'tStart = ', tStart, 'tEnd = ', tEnd)
+    return vAmpLeft[idxVStart], vAmpRight[idxVEnd], tStart, tEnd, tGap, vAmp, vMax, vMin, tGapAmp
+
 
 def custom_piecewise(cases):
     """Compute result of a piecewise function"""
-    return select(cases[0::2],cases[1::2])
+    return select(cases[0::2], cases[1::2])
 
+
+'''
 def solve_model():
     """Solve model with ODE solver"""
     from scipy.integrate import ode
     # Initialise constants and state variables
-    (init_states, constants) = initConsts()
+    (init_states, constants) = initConsts() # Moved constants initiation out for iteration for Morris    
 
     # Set timespan to solve over
     voi = linspace(0, 1000, 20000)
@@ -244,18 +254,166 @@ def solve_model():
     # Compute algebraic variables
     algebraic = computeAlgebraic(constants, states, voi)
     return (voi, states, algebraic)
+  '''          
+
+
+def solve_model(constants):
+    """Solve model with ODE solver"""
+    from scipy.integrate import ode
+    # Initialise constants and state variables
+    # (init_states, constants) = initConsts() # Moved constants initiation out for iteration for Morris    
+
+    # Set timespan to solve over
+    voi = linspace(0, 1500, 20000)
+
+    # Construct ODE object to solve
+    r = ode(computeRates)
+    r.set_integrator('vode', method='bdf', atol=1e-006, rtol=1e-006, max_step=0.1)
+    r.set_initial_value(init_states, voi[0])
+    r.set_f_params(constants)
+
+    # Solve model
+    states = array([[0.0] * len(voi)] * sizeStates)
+    states[:, 0] = init_states
+    for (i, t) in enumerate(voi[1:]):
+        if r.successful():
+            r.integrate(t)
+            states[:, i + 1] = r.y
+        else:
+            break
+
+    # Compute algebraic variables
+    algebraic = computeAlgebraic(constants, states, voi)
+    return (voi, states, algebraic)
+
 
 def plot_model(voi, states, algebraic):
     """Plot variables against variable of integration"""
-    import pylab
     (legend_states, legend_algebraic, legend_voi, legend_constants) = createLegends()
     pylab.figure(1)
-    pylab.plot(voi,vstack((states,algebraic)).T)
+    pylab.plot(voi, vstack((states, algebraic)).T)
     pylab.xlabel(legend_voi)
     pylab.legend(legend_states + legend_algebraic, loc='best')
     pylab.show()
 
+
+def morris(p, r, percentage):
+    
+    delta = p / (2 * (p - 1))  # Calculate delta according to Morris
+    #k = len(x)  # Get the number of x inputs factors
+    xi = arange(0, p, delta)  # Initiate x base values 
+    
+    print('Morris parameters - ', 'delta:', delta, ', p(level):', p, ', r(times):', r)
+    
+    yi = zeros((r, 30 - 25+ 25), dtype=object)  # Debug number can be reduced     + 27 
+    for idx_r in range(r):        
+        print('Calculating y when r is', idx_r, ':')
+        x = initConsts()[1]
+        r_time = 0        
+        for idx in range(3, len(x) -25 + 25):   # Debug number can be reduced         
+            x_base = random.choice(xi)  # Choose base value randomly 
+            x[idx] = x[idx] + x_base    # Calculate x0 base              
+        (voi, states, algebraic) = solve_model(x)  # Calculate y0 base
+        yi[idx_r][r_time] = getAmpPerc(voi, algebraic, percentage)
+        if(yi[idx_r][r_time][0]>100):
+            print('error')
+        print(yi[idx_r][r_time])
+        
+        for idx in range(3, len(x) -25 +25):    # Debug number can be reduced            
+            x[idx] = x[idx] + delta  # Calculate x'
+            (voi, states, algebraic) = solve_model(x)  # Calculate y'
+            yi[idx_r][r_time + 1] = getAmpPerc(voi, algebraic, percentage)
+            print(yi[idx_r][r_time + 1])
+            r_time = r_time + 1    
+    
+    print('Calculating y finished.')  # vAmpLeft[idxVStart], vAmpRight[idxVEnd], tStart, tEnd, tGap, vAmp, vMax, vMin, tGapAmp
+    
+    # Calculate elementary effect
+    ee = zeros((r, 30 - 1 - 25+ 25), dtype=object)  # Debug number can be reduced
+    for r_idx in range(len(yi)):
+        y_pre = array([], dtype=float32)
+        for y_idx in range(len(yi[r_idx])):
+            val = array(yi[r_idx][y_idx], dtype=float32)
+            if(len(y_pre) == 0):
+                y_pre = val
+            else:
+                ee[r_idx][y_idx - 1] = (abs(val - y_pre)) / delta  # ee = (y' - y) / delta            # Calculate elementary effect
+            print('ee', ee.tolist())
+    print('Calculating EE finished.')    
+    #print('length of ee:', len(ee))
+    # Calculate Mu   
+    mu = array([], dtype=float32)
+    for r_idx in range(len(ee)):
+        if(len(mu) == 0):
+            mu = ee[r_idx]
+        else:
+            mu = abs(ee[r_idx] + mu)
+    mu = mu / len(ee)
+    print('Calculating Mu finished.')  
+    #print('mu = ', mu ,'mu size = ', len(mu))
+    #for i in range(1,10):
+    get_x(mu, 5)
+    get_x(mu, 6)
+
+    
+def get_x(mu, var):                             # the number of var can be chosen from 1 to 9 to get different outputs  
+    # mu = mu.tolist()
+    ord = zeros((len(mu), 9), dtype=object)
+    for idx in range(len(mu)):
+        if(isinstance(mu[idx],float)): 
+            ord[idx] = mu[idx]
+        else:
+            ord[idx] = mu[idx].tolist()
+    
+    #print(ord[:, var - 1:var].T)
+#     pylab.subplot(221)
+#     pylab.subplot(222)
+#     pylab.subplot(212)
+    name_list = ['']*(len(mu))
+    for mu_idx in range(len(mu)):
+        name_list[mu_idx] = 'x' + str(mu_idx+1);
+
+    num_list = ord[:, var - 1:var].T #arange(0.1,1.0,0.1)
+    #print(num_list[0])
+    #num_list = arange(0.2,0.6,0.2)
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(20,50))
+    #fig, axes = plt.subplots(nrows=4, ncols=4)
+    plt.tight_layout() # Or equivalently,  "plt.tight_layout()"
+    
+
+    plt.subplot(211)
+    plt.title('Elementary Effect')
+    #plt.xlabel('$x$')
+    plt.ylabel('$\mu$')
+    y = arange(0.0,2.0,0.05)
+    
+    plt.xlim((-1, len(num_list[0])+1))
+    #plt.ylim((0, 2))
+    plt.yticks(y)
+    bars = plt.bar(range(len(num_list[0])), num_list[0],color='steelblue',tick_label=name_list, alpha=0.75)
+    for bar in bars:
+        plt.text(bar.get_x() + bar.get_width()/2, 0.55*bar.get_height(),'%f'%float(bar.get_height()), ha='center', rotation=45, va='bottom',fontsize=6)
+    
+    plt.subplot(212)
+    plt.yticks(y)
+    plt.xlim((-1, len(num_list[0])+1))
+    #plt.ylim((0, 2))    
+    plt.xlabel('$x$')
+    plt.ylabel('$\mu$')
+    for x, y in zip(name_list, num_list[0]):
+        plt.text(x, 0.55*y, y, ha='center', va='bottom', rotation=45, fontsize=6)
+    plt.scatter(name_list,num_list)
+    
+    
+    plt.show()
+    
 if __name__ == "__main__":
-    (voi, states, algebraic) = solve_model()    
-    getAmpPerc(voi, algebraic, 0.9)
-    plot_model(voi, states, algebraic)
+    (init_states, constants) = initConsts()   
+    # plot_model(voi, states, algebraic)
+    # (voi, states, algebraic) = solve_model()
+    # getAmp(voi, algebraic)
+    # getAmpPerc(voi, algebraic, 0.5)
+    print('Morris starts.')
+    morris(20, 1, 0.5)    
+    print('Morris ends.')
