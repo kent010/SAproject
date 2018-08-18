@@ -74,8 +74,7 @@ class Bueno:
         legend_rates[2] = "d/dt w in component slow_inward_current_w_gate (dimensionless)"
         legend_rates[3] = "d/dt s in component slow_inward_current_s_gate (dimensionless)"
         return (legend_states, legend_algebraic, legend_voi, legend_constants)
-    
-    
+        
     def initConsts(self):
         constants = [0.0] * sizeConstants; states = [0.0] * sizeStates;
         constants[0] = 1  # epi in component environment (dimensionless)
@@ -136,8 +135,7 @@ class Bueno:
         constants[31] = self.custom_piecewise([equal(constants[0] , 1.00000), 6.00000 , equal(constants[1] , 1.00000), 6.00000 , True, 7.00000])
         # tau_o2 in component slow_outward_current (ms)"
         return (states, constants)
-    
-    
+        
     def computeRates(self, voi, states, constants):
         rates = [0.0] * sizeStates; algebraic = [0.0] * sizeAlgebraic
         algebraic[4] = self.custom_piecewise([less(states[0] , constants[6]), 0.00000 , True, 1.00000])
@@ -160,8 +158,7 @@ class Bueno:
         algebraic[1] = self.custom_piecewise([greater_equal(voi , 100.000) & less_equal(voi , 101.000), -1.00000 , True, 0.00000])
         rates[0] = -(algebraic[8] + algebraic[14] + algebraic[15] + algebraic[1])
         return(rates)
-    
-    
+        
     def computeAlgebraic(self, constants, states, voi):
         algebraic = array([[0.0] * len(voi)] * sizeAlgebraic)
         states = array(states)
@@ -182,9 +179,10 @@ class Bueno:
         algebraic[15] = (-algebraic[4] * states[2] * states[3]) / constants[22]
         algebraic[1] = self.custom_piecewise([greater_equal(voi , 100.000) & less_equal(voi , 101.000), -1.00000 , True, 0.00000])
         algebraic[0] = constants[3] + states[0] * (constants[4] - constants[3])
+        if(max(algebraic[0])>100):
+            print('error counting algebraic[0]')
         return algebraic
-    
-    
+        
     def getAmp(self, voi, algebraic):
         """Calculate amplitude of voltage"""
         idxVMax = where(algebraic[0] == max(algebraic[0]))[0][0]  # Find the index of maximum value of voltage
@@ -198,8 +196,7 @@ class Bueno:
         tGap = tEnd - tStart  # Calculate the duration from the start to the end
         # print('vMax = ',vMax, 'vMin = ',vMin, 'vAmp = ',vAmp, 'tGap = ',tGap)
         return vAmp, vMax, vMin, idxVMax, tGap
-    
-    
+        
     def getAmpPerc(self, voi, algebraic, percentage): 
         """Calculate amplitude of voltage by different percentages"""
         vAmp, vMax, vMin, idxVMax, tGapAmp = self.getAmp(voi, algebraic)  # Get the amplitude of voltage
@@ -214,21 +211,18 @@ class Bueno:
         # print('vStart-1',algebraic[0][idxVStart-1])                # for testing the voltage, by using the neighboring voltage
         # print('vStart',algebraic[0][idxVStart])
         # print('vStart+1',algebraic[0][idxVStart+1])   
-        # print('vEnd-1',vAmpRight[idxVEnd-1])
-        # print('vEnd',vAmpRight[idxVEnd])
-        # print('vEnd+1',vAmpRight[idxVEnd+1])    
+        #print('vEnd-1',vAmpRight[idxVEnd-1])
+        #print('vEnd',vAmpRight[idxVEnd])
+        #print('vEnd+1',vAmpRight[idxVEnd+1])    
         # print('vStart = ',vAmpLeft[idxVStart], 'vEnd = ',vAmpRight[idxVEnd], 'tStart = ', tStart, 'tEnd = ', tEnd)
-        if(vAmpLeft[idxVStart]>100):
-            print('error getAmpPerc')
-        
+        if(tEnd<1000):
+            print('error getAmpPerc')                          
         return vAmpLeft[idxVStart], vAmpRight[idxVEnd], tStart, tEnd, tGap, vAmp, vMax, vMin, tGapAmp
-    
-    
+        
     def custom_piecewise(self, cases):
         """Compute result of a piecewise function"""
         return select(cases[0::2], cases[1::2])
-    
-    
+        
     '''
     def solve_model():
         """Solve model with ODE solver"""
@@ -259,8 +253,7 @@ class Bueno:
         algebraic = computeAlgebraic(constants, states, voi)
         return (voi, states, algebraic)
       '''          
-    
-    
+        
     def solve_model(self, constants):
         """Solve model with ODE solver"""
         from scipy.integrate import ode
@@ -268,7 +261,7 @@ class Bueno:
         # (init_states, constants) = initConsts() # Moved constants initiation out for iteration for Morris    
         init_states = self.initConsts()[0]
         # Set timespan to solve over
-        voi = linspace(0, 1500, 6000)
+        voi = linspace(0, 1300, 3000)
     
         # Construct ODE object to solve
         r = ode(self.computeRates)
@@ -298,7 +291,7 @@ class Bueno:
         pylab.xlabel(legend_voi)
         pylab.legend(legend_states + legend_algebraic, loc='best')
         pylab.show()
-        
+       
     def morris(self, p, r, percentage):
         
         delta = p / (2 * (p - 1))   # Calculate delta according to Morris
@@ -309,22 +302,21 @@ class Bueno:
         yi = zeros((r, 30 - 25+ 25 ), dtype=object)          # Debug number can be reduced     + 25 
         for idx_r in range(r):        
             print('Calculating y when r is', idx_r, ':')
+            
             x = self.initConsts()[1]
-            r_time = 0        
+            r_time = 0
             for idx in range(3, len(x) -25+ 25 ):           # Debug number can be reduced         
                 x_base = random.choice(xi)                  # Choose base value randomly 
                 x[idx] = x[idx] + x_base                    # Calculate x0 base              
             (voi, states, algebraic) = self.solve_model(x)       # Calculate y0 base
             yi[idx_r][r_time] = self.getAmpPerc(voi, algebraic, percentage)
-            if(yi[idx_r][r_time][0]>100):
-                print('error')
-            print(yi[idx_r][r_time])
+            print('y',r_time,':',yi[idx_r][r_time])
             
             for idx in range(3, len(x) -25+ 25 ):            # Debug number can be reduced            
                 x[idx] = x[idx] + delta                     # Calculate x'
                 (voi, states, algebraic) = self.solve_model(x)   # Calculate y'
                 yi[idx_r][r_time + 1] = self.getAmpPerc(voi, algebraic, percentage)
-                print(yi[idx_r][r_time + 1])
+                print('y',r_time+1,':',yi[idx_r][r_time + 1])
                 r_time = r_time + 1    
         
         print('Calculating y finished.')  
@@ -353,10 +345,12 @@ class Bueno:
                 mu = abs(ee[r_idx] + mu)
         mu = mu / len(ee)
         print('Calculating Mu finished.')  
-        self.get_x(mu, 5, True)
-        self.get_x(mu, 6, True)
+        
+        
+        self.get_x(mu, [5,6], percentage, True)
+        #self.get_x(mu, 6, True)
             
-    def get_x(self, mu, var, ordered):     # the number of var can be chosen from 1 to 9 to get different outputs  
+    def get_x(self, mu, var, percentage, ordered):     # the number of var can be chosen from 1 to 9 to get different outputs  
     
         ord = zeros((len(mu), 9), dtype=object)
         for idx in range(len(mu)):
@@ -365,42 +359,58 @@ class Bueno:
             else:
                 ord[idx] = mu[idx].tolist()
         #print(ord[:, var - 1:var].T)
-        val_list = (ord[:, var - 1:var].T)[0] 
-        label_list = ['']*(len(mu))
-        sorted_list = dict() 
-        for mu_idx in range(len(mu)):
-            label_list[mu_idx] = 'x' + str(mu_idx+1);
-            sorted_list[label_list[mu_idx]] = val_list[mu_idx]
+        
+        title = ['']*10
+        title[1]='voltage at the starting point at the percentage of ' + str(percentage*100)+'%'
+        title[2]='voltage at the end point at the percentage of ' + str(percentage*100)+'%'
+        title[3]='time at the starting point at the percentage of ' + str(percentage*100)+'%'
+        title[4]='time at the end point at the percentage of ' + str(percentage*100)+'%'
+        title[5]='time duration at the percentage of ' + str(percentage*100)+'%'
+        title[6]='amplitude voltage'
+        title[7]='maximum voltage'
+        title[8]='minimum voltage'
+        title[9]='time duration'
+        
         import matplotlib.pyplot as plt
-        plt.figure(figsize=(20,50))
+        plt.figure(figsize=(30,30))
         plt.tight_layout() 
+        plt.subplots_adjust(wspace =0, hspace =0.5)
         
-        if(ordered):
-            sorted_list = dict(sorted(sorted_list.items(),key=lambda item:item[1],reverse=True))
-            label_list = list(sorted_list.keys())
-            val_list = sorted_list.values()
-    
-        plt.subplot(211)
-        plt.title('Elementary Effect')
-        #plt.xlabel('$x$')
-        plt.ylabel('$\mu$')
-        y = arange(0.0,2.0,0.05)    
-        plt.xlim((-1, len(val_list)+1))
-        #plt.ylim((0, 2))
-        plt.yticks(y)
-        bars = plt.bar(range(len(val_list)), val_list,color='steelblue',tick_label=label_list, alpha=0.75)
-        for bar in bars:
-            plt.text(bar.get_x() + bar.get_width()/2, 0.55*bar.get_height(),'%f'%float(bar.get_height()), ha='center', rotation=45, va='bottom',fontsize=6)
+        for idx in range(len(var)):
+            val_list = (ord[:, var[idx] - 1:var[idx]].T)[0] 
+            label_list = ['']*(len(mu))
+            sorted_list = dict() 
+            for mu_idx in range(len(mu)):
+                label_list[mu_idx] = 'x' + str(mu_idx+1);
+                sorted_list[label_list[mu_idx]] = val_list[mu_idx]        
+            
+            if(ordered):
+                sorted_list = dict(sorted(sorted_list.items(),key=lambda item:item[1],reverse=True))
+                label_list = list(sorted_list.keys())
+                val_list = sorted_list.values()
+           
         
-        plt.subplot(212)
-        plt.yticks(y)
-        plt.xlim((-1, len(val_list)+1))
-        #plt.ylim((0, 2))    
-        plt.xlabel('$x$')
-        plt.ylabel('$\mu$')
-        for x, y in zip(label_list, val_list):
-            plt.text(x, 0.55*y, y, ha='center', va='bottom', rotation=45, fontsize=6, alpha=0.75)
-        plt.scatter(label_list,val_list)
+            plt.subplot(210+(idx+1))
+            plt.title('Elementary Effect of ' + title[var[idx]])
+            #plt.xlabel('$x$')
+            plt.ylabel('$\mu$')
+            #y = arange(0.0,2.0,0.05)    
+            plt.xlim((-1, len(val_list)+1))
+            #plt.ylim((0, 2))
+            #plt.yticks(y)
+            bars = plt.bar(range(len(val_list)), val_list,color='steelblue',tick_label=label_list, alpha=0.75)
+            for bar in bars:
+                plt.text(bar.get_x() + bar.get_width()/2, 0.55*bar.get_height(),'%f'%float(bar.get_height()), ha='center', rotation=45, va='bottom',fontsize=6)
+            
+#             plt.subplot(212)
+#             #plt.yticks(y)
+#             plt.xlim((-1, len(val_list)+1))
+#             #plt.ylim((0, 2))    
+#             plt.xlabel('$x$')
+#             plt.ylabel('$\mu$')
+#             for x, y in zip(label_list, val_list):
+#                 plt.text(x, 0.55*y, y, ha='center', va='bottom', rotation=45, fontsize=6, alpha=0.75)
+#             plt.scatter(label_list,val_list)
         
         
         plt.show()
