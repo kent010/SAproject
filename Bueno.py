@@ -2,81 +2,28 @@
 sizeAlgebraic = 16
 sizeStates = 4
 sizeConstants = 32
+sizeInputs = 30
 import sys, getopt
 from math import *
 from numpy import *
 import random
 import pylab
+import matplotlib.pyplot as plt
+
 
 class Bueno:
 
-    def createLegends():
-        legend_states = [""] * sizeStates
+    def createLegends(self):
+        legend_states = [""] * 0
         legend_rates = [""] * sizeStates
-        legend_algebraic = [""] * sizeAlgebraic
-        legend_voi = ""
-        legend_constants = [""] * sizeConstants
+        legend_algebraic = [""] * 1
         legend_voi = "time in component environment (ms)"
-        legend_constants[0] = "epi in component environment (dimensionless)"
-        legend_constants[1] = "endo in component environment (dimensionless)"
-        legend_constants[2] = "mcell in component environment (dimensionless)"
-        legend_states[0] = "u in component membrane (dimensionless)"
-        legend_algebraic[0] = "Vm in component membrane (mV)"
-        legend_constants[3] = "V_0 in component membrane (mV)"
-        legend_constants[4] = "V_fi in component membrane (mV)"
-        legend_algebraic[8] = "J_fi in component fast_inward_current (per_ms)"  # Na
-        legend_algebraic[14] = "J_so in component slow_outward_current (per_ms)"  # K
-        legend_algebraic[15] = "J_si in component slow_inward_current (per_ms)"  # Ca
-        legend_algebraic[1] = "J_stim in component membrane (per_ms)"
-        legend_algebraic[2] = "m in component m (dimensionless)"
-        legend_constants[5] = "u_m in component m (dimensionless)"
-        legend_algebraic[4] = "p in component p (dimensionless)"
-        legend_constants[6] = "u_p in component p (dimensionless)"
-        legend_algebraic[3] = "q in component q (dimensionless)"
-        legend_constants[13] = "u_q in component q (dimensionless)"
-        legend_algebraic[5] = "r in component r (dimensionless)"
-        legend_constants[15] = "u_r in component r (dimensionless)"
-        legend_constants[16] = "tau_fi in component fast_inward_current (ms)"
-        legend_constants[17] = "u_u in component fast_inward_current (dimensionless)"
-        legend_states[1] = "v in component fast_inward_current_v_gate (dimensionless)"
-        legend_algebraic[6] = "v_inf in component fast_inward_current_v_gate (dimensionless)"
-        legend_algebraic[9] = "tau_v_minus in component fast_inward_current_v_gate (ms)"
-        legend_constants[30] = "tau_v1_minus in component fast_inward_current_v_gate (ms)"
-        legend_constants[12] = "tau_v2_minus in component fast_inward_current_v_gate (ms)"
-        legend_constants[7] = "tau_v_plus in component fast_inward_current_v_gate (ms)"
-        legend_algebraic[11] = "tau_o in component slow_outward_current (ms)"
-        legend_constants[14] = "tau_o1 in component slow_outward_current (ms)"
-        legend_constants[31] = "tau_o2 in component slow_outward_current (ms)"
-        legend_algebraic[13] = "tau_so in component slow_outward_current (ms)"
-        legend_constants[18] = "tau_so1 in component slow_outward_current (ms)"
-        legend_constants[19] = "tau_so2 in component slow_outward_current (ms)"
-        legend_constants[20] = "k_so in component slow_outward_current (dimensionless)"
-        legend_constants[21] = "u_so in component slow_outward_current (dimensionless)"
-        legend_constants[22] = "tau_si in component slow_inward_current (ms)"
-        legend_states[2] = "w in component slow_inward_current_w_gate (dimensionless)"
-        legend_states[3] = "s in component slow_inward_current_s_gate (dimensionless)"
-        legend_algebraic[10] = "w_inf in component slow_inward_current_w_gate (dimensionless)"
-        legend_constants[23] = "tau_winf in component slow_inward_current_w_gate (ms)"
-        legend_constants[24] = "wstar_inf in component slow_inward_current_w_gate (dimensionless)"
-        legend_algebraic[12] = "tau_w_minus in component slow_inward_current_w_gate (ms)"
-        legend_constants[25] = "tau_w1_minus in component slow_inward_current_w_gate (ms)"
-        legend_constants[26] = "tau_w2_minus in component slow_inward_current_w_gate (ms)"
-        legend_constants[27] = "k_w_minus in component slow_inward_current_w_gate (dimensionless)"
-        legend_constants[28] = "u_w_minus in component slow_inward_current_w_gate (dimensionless)"
-        legend_constants[29] = "tau_w_plus in component slow_inward_current_w_gate (ms)"
-        legend_algebraic[7] = "tau_s in component slow_inward_current_s_gate (ms)"
-        legend_constants[8] = "tau_s1 in component slow_inward_current_s_gate (ms)"
-        legend_constants[11] = "tau_s2 in component slow_inward_current_s_gate (ms)"
-        legend_constants[9] = "k_s in component slow_inward_current_s_gate (dimensionless)"
-        legend_constants[10] = "u_s in component slow_inward_current_s_gate (dimensionless)"
-        legend_rates[0] = "d/dt u in component membrane (dimensionless)"
-        legend_rates[1] = "d/dt v in component fast_inward_current_v_gate (dimensionless)"
-        legend_rates[2] = "d/dt w in component slow_inward_current_w_gate (dimensionless)"
-        legend_rates[3] = "d/dt s in component slow_inward_current_s_gate (dimensionless)"
+        legend_constants = [""] * sizeConstants        
+        legend_algebraic[0] = "Vm in component membrane (mV)"        
         return (legend_states, legend_algebraic, legend_voi, legend_constants)
         
     def initConsts(self):
-        constants = [0.0] * sizeConstants; states = [0.0] * sizeStates;
+        constants = [0.0] * sizeConstants; states = [0.0] * sizeStates; 
         constants[0] = 1  # epi in component environment (dimensionless)
         constants[1] = 0  # endo in component environment (dimensionless)
         constants[2] = 0  # mcell in component environment (dimensionless)
@@ -136,6 +83,53 @@ class Bueno:
         # tau_o2 in component slow_outward_current (ms)"
         return (states, constants)
         
+    def initTitles(self, percentage):
+        title = [''] * 10
+        title[1] = 'voltage at the starting point at the percentage of ' + str(percentage * 100) + '%'
+        title[2] = 'voltage at the end point at the percentage of ' + str(percentage * 100) + '%'
+        title[3] = 'time at the starting point at the percentage of ' + str(percentage * 100) + '%'
+        title[4] = 'time at the end point at the percentage of ' + str(percentage * 100) + '%'
+        title[5] = 'time duration at the percentage of ' + str(percentage * 100) + '%'
+        title[6] = 'amplitude voltage'
+        title[7] = 'maximum voltage'
+        title[8] = 'minimum voltage'
+        title[9] = 'time duration'        
+        return title
+    
+    def initLabels(self):
+        x_labels = [''] * sizeInputs
+        x_labels[0] = "Vm"  # in component membrane (mV)"
+        x_labels[1] = "V_0"  # in component membrane (mV)"
+        x_labels[2] = "V_fi"  # in component membrane (mV)"
+        x_labels[3] = "u_m"  # in component m (dimensionless)"
+        x_labels[4] = "u_p"  # in component p (dimensionless)"
+        x_labels[5] = "tau_v_plus"  # in component fast_inward_current_v_gate (ms)"
+        x_labels[6] = "tau_s1"  # in component slow_inward_current_s_gate (ms)"
+        x_labels[7] = "k_s"  # in component slow_inward_current_s_gate (dimensionless)"
+        x_labels[8] = "u_s"  # in component slow_inward_current_s_gate (dimensionless)"
+        x_labels[9] = "tau_s2"  # in component slow_inward_current_s_gate (ms)"
+        x_labels[10] = "tau_v2_minus"  # in component fast_inward_current_v_gate (ms)"
+        x_labels[11] = "u_q"  # in component q (dimensionless)"
+        x_labels[12] = "tau_o1"  # in component slow_outward_current (ms)"
+        x_labels[13] = "u_r"  # in component r (dimensionless)"
+        x_labels[14] = "tau_fi"  # in component fast_inward_current (ms)"
+        x_labels[15] = "u_u"  # in component fast_inward_current (dimensionless)"
+        x_labels[16] = "tau_so1"  # in component slow_outward_current (ms)"
+        x_labels[17] = "tau_so2"  # in component slow_outward_current (ms)"
+        x_labels[18] = "k_so"  # in component slow_outward_current (dimensionless)"
+        x_labels[19] = "u_so"  # in component slow_outward_current (dimensionless)"
+        x_labels[20] = "tau_si"  # in component slow_inward_current (ms)"
+        x_labels[21] = "tau_winf"  # in component slow_inward_current_w_gate (ms)"
+        x_labels[22] = "wstar_inf"  # in component slow_inward_current_w_gate (dimensionless)"
+        x_labels[23] = "tau_w1_minus"  # in component slow_inward_current_w_gate (ms)"
+        x_labels[24] = "tau_w2_minus"  # in component slow_inward_current_w_gate (ms)"
+        x_labels[25] = "k_w_minus"  # in component slow_inward_current_w_gate (dimensionless)"
+        x_labels[26] = "u_w_minus"  # in component slow_inward_current_w_gate (dimensionless)"
+        x_labels[27] = "tau_w_plus"  # in component slow_inward_current_w_gate (ms)"
+        x_labels[28] = "tau_v1_minus"  # in component fast_inward_current_v_gate (ms)"
+        x_labels[29] = "tau_o2"  # in component slow_outward_current (ms)"
+        return x_labels
+    
     def computeRates(self, voi, states, constants):
         rates = [0.0] * sizeStates; algebraic = [0.0] * sizeAlgebraic
         algebraic[4] = self.custom_piecewise([less(states[0] , constants[6]), 0.00000 , True, 1.00000])
@@ -162,25 +156,8 @@ class Bueno:
     def computeAlgebraic(self, constants, states, voi):
         algebraic = array([[0.0] * len(voi)] * sizeAlgebraic)
         states = array(states)
-        voi = array(voi)
-        algebraic[4] = self.custom_piecewise([less(states[0] , constants[6]), 0.00000 , True, 1.00000])
-        algebraic[7] = (1.00000 - algebraic[4]) * constants[8] + algebraic[4] * constants[11]
-        algebraic[2] = self.custom_piecewise([less(states[0] , constants[5]), 0.00000 , True, 1.00000])
-        algebraic[6] = self.custom_piecewise([less(states[0] , constants[13]), 1.00000 , True, 0.00000])
-        algebraic[3] = self.custom_piecewise([less(states[0] , constants[13]), 0.00000 , True, 1.00000])
-        algebraic[9] = algebraic[3] * constants[12] + (1.00000 - algebraic[3]) * constants[30]
-        algebraic[5] = self.custom_piecewise([less(states[0] , constants[15]), 0.00000 , True, 1.00000])
-        algebraic[10] = (1.00000 - algebraic[5]) * (1.00000 - (states[0] * 1.00000) / constants[23]) + algebraic[5] * constants[24]
-        algebraic[12] = constants[25] + ((constants[26] - constants[25]) * (1.00000 + tanh(constants[27] * (states[0] - constants[28])))) / 2.00000
-        algebraic[8] = (-algebraic[2] * states[1] * (states[0] - constants[5]) * (constants[17] - states[0])) / constants[16]
-        algebraic[11] = (1.00000 - algebraic[5]) * constants[14] + algebraic[5] * constants[31]
-        algebraic[13] = constants[18] + ((constants[19] - constants[18]) * (1.00000 + tanh(constants[20] * (states[0] - constants[21])))) / 2.00000
-        algebraic[14] = (states[0] * (1.00000 - algebraic[4])) / algebraic[11] + algebraic[4] / algebraic[13]
-        algebraic[15] = (-algebraic[4] * states[2] * states[3]) / constants[22]
-        algebraic[1] = self.custom_piecewise([greater_equal(voi , 100.000) & less_equal(voi , 101.000), -1.00000 , True, 0.00000])
+        voi = array(voi)        
         algebraic[0] = constants[3] + states[0] * (constants[4] - constants[3])
-        if(max(algebraic[0])>100):
-            print('error counting algebraic[0]')
         return algebraic
         
     def getAmp(self, voi, algebraic):
@@ -208,60 +185,27 @@ class Bueno:
         tStart = voi[idxVStart]  # Calculate the time starting at the first value of voltage
         tEnd = voi[idxVEnd + idxVMax + 1]  # Calculate the time ending at the second value of voltage
         tGap = tEnd - tStart  # Calculate the duration of the two points - 
-        # print('vStart-1',algebraic[0][idxVStart-1])                # for testing the voltage, by using the neighboring voltage
+        # print('vStart-1',algebraic[0][idxVStart-1])           # for testing the voltage, by using the neighboring voltage
         # print('vStart',algebraic[0][idxVStart])
         # print('vStart+1',algebraic[0][idxVStart+1])   
-        #print('vEnd-1',vAmpRight[idxVEnd-1])
-        #print('vEnd',vAmpRight[idxVEnd])
-        #print('vEnd+1',vAmpRight[idxVEnd+1])    
+        # print('vEnd-1',vAmpRight[idxVEnd-1])
+        # print('vEnd',vAmpRight[idxVEnd])
+        # print('vEnd+1',vAmpRight[idxVEnd+1])    
         # print('vStart = ',vAmpLeft[idxVStart], 'vEnd = ',vAmpRight[idxVEnd], 'tStart = ', tStart, 'tEnd = ', tEnd)
-        if(tEnd<1000):
-            print('error getAmpPerc')                          
+                        
         return vAmpLeft[idxVStart], vAmpRight[idxVEnd], tStart, tEnd, tGap, vAmp, vMax, vMin, tGapAmp
         
     def custom_piecewise(self, cases):
         """Compute result of a piecewise function"""
         return select(cases[0::2], cases[1::2])
         
-    '''
-    def solve_model():
-        """Solve model with ODE solver"""
-        from scipy.integrate import ode
-        # Initialise constants and state variables
-        (init_states, constants) = initConsts() # Moved constants initiation out for iteration for Morris    
-    
-        # Set timespan to solve over
-        voi = linspace(0, 1000, 20000)
-    
-        # Construct ODE object to solve
-        r = ode(computeRates)
-        r.set_integrator('vode', method='bdf', atol=1e-006, rtol=1e-006, max_step=0.1)
-        r.set_initial_value(init_states, voi[0])
-        r.set_f_params(constants)
-    
-        # Solve model
-        states = array([[0.0] * len(voi)] * sizeStates)
-        states[:,0] = init_states
-        for (i,t) in enumerate(voi[1:]):
-            if r.successful():
-                r.integrate(t)
-                states[:,i+1] = r.y
-            else:
-                break
-    
-        # Compute algebraic variables
-        algebraic = computeAlgebraic(constants, states, voi)
-        return (voi, states, algebraic)
-      '''          
-        
     def solve_model(self, constants):
         """Solve model with ODE solver"""
         from scipy.integrate import ode
-        # Initialise constants and state variables
-        # (init_states, constants) = initConsts() # Moved constants initiation out for iteration for Morris    
+        # Initialise constants and state variables  
         init_states = self.initConsts()[0]
         # Set timespan to solve over
-        voi = linspace(0, 1300, 3000)
+        voi = linspace(0, 1300, 5000)
     
         # Construct ODE object to solve
         r = ode(self.computeRates)
@@ -283,147 +227,115 @@ class Bueno:
         algebraic = self.computeAlgebraic(constants, states, voi)
         return (voi, states, algebraic)
     
-    def plot_model(voi, states, algebraic):
-        """Plot variables against variable of integration"""
-        (legend_states, legend_algebraic, legend_voi, legend_constants) = createLegends()
-        pylab.figure(1)
-        pylab.plot(voi, vstack((states, algebraic)).T)
-        pylab.xlabel(legend_voi)
-        pylab.legend(legend_states + legend_algebraic, loc='best')
-        pylab.show()
-       
-    def morris(self, p, r, percentage):
+    def morris(self, p, percentage):
         
-        delta = p / (2 * (p - 1))   # Calculate delta according to Morris
-        xi = arange(0, p, delta)    # Initiate x base values 
+        delta = 1 / (p - 1)  # Calculate delta according to Morris
+        xi = arange(0, p, delta)  # Initiate x base values 
         
-        print('Morris parameters - ', 'delta:', delta, ', p(level):', p, ', r(times):', r, ', AP percentage:', percentage)
+        print('Morris parameters - ', 'delta:', delta, ', p(level):', p, ', AP percentage:', percentage)
         
-        yi = zeros((r, 30 - 25+ 25 ), dtype=object)          # Debug number can be reduced     + 25 
-        for idx_r in range(r):        
-            print('Calculating y when r is', idx_r, ':')
-            
-            x = self.initConsts()[1]
-            r_time = 0
-            for idx in range(3, len(x) -25+ 25 ):           # Debug number can be reduced         
-                x_base = random.choice(xi)                  # Choose base value randomly 
-                x[idx] = x[idx] + x_base                    # Calculate x0 base              
-            (voi, states, algebraic) = self.solve_model(x)       # Calculate y0 base
-            yi[idx_r][r_time] = self.getAmpPerc(voi, algebraic, percentage)
-            print('y',r_time,':',yi[idx_r][r_time])
-            
-            for idx in range(3, len(x) -25+ 25 ):            # Debug number can be reduced            
-                x[idx] = x[idx] + delta                     # Calculate x'
-                (voi, states, algebraic) = self.solve_model(x)   # Calculate y'
-                yi[idx_r][r_time + 1] = self.getAmpPerc(voi, algebraic, percentage)
-                print('y',r_time+1,':',yi[idx_r][r_time + 1])
-                r_time = r_time + 1    
+        y = zeros((30 - 25 + 25), dtype=object)  # Debug number can be reduced     + 25 
+        # for idx_r in range(r):        
+            # print('Calculating y when r is', idx_r, ':')
+        x = self.initConsts()[1]
+        r_time = 0
+        (voi, states, algebraic) = self.solve_model(x)  # Calculate y0 base
+        plots = [algebraic] * sizeInputs
+        plots[0] = algebraic
+        y[r_time] = self.getAmpPerc(voi, algebraic, percentage)
+        # print('x',r_time,':',x)
+        print('y', r_time, ':', y[r_time])
         
+        for idx in range(3, len(x) - 25 + 25):  # Debug number can be reduced            
+            x[idx] = x[idx] + delta  # Calculate x'
+            (voi, states, algebraic) = self.solve_model(x)  # Calculate y'
+            plots[r_time + 1] = algebraic
+            y[r_time + 1] = self.getAmpPerc(voi, algebraic, percentage)
+            # print('x',r_time,':',x)
+            print('y', r_time + 1, ':', y[r_time + 1])
+            r_time = r_time + 1    
+              
         print('Calculating y finished.')  
         # Outputs(9 outputs): vAmpLeft[idxVStart], vAmpRight[idxVEnd], tStart, tEnd, tGap, vAmp, vMax, vMin, tGapAmp
         
         # Calculate elementary effect
-        ee = zeros((r, 30 - 1 - 25+ 25 ), dtype=object)      # Debug number can be reduced
-        for r_idx in range(len(yi)):
-            y_pre = array([], dtype=float32)
-            for y_idx in range(len(yi[r_idx])):
-                val = array(yi[r_idx][y_idx], dtype=float32)
-                if(len(y_pre) == 0):
-                    y_pre = val
-                else:
-                    ee[r_idx][y_idx - 1] = (abs(val - y_pre)) / delta  # ee = (y' - y) / delta
-                print('ee', ee.tolist())
+        ee = zeros((30 - 1 - 25 + 25), dtype=object)  # Debug number can be reduced
+        
+        y_pre = array([], dtype=float32)
+        for y_idx in range(len(y)):
+            val = array(y[y_idx], dtype=float32)
+            if(len(y_pre) == 0):
+                y_pre = val
+            else:
+                ee[y_idx - 1] = (abs(val - y_pre)) / delta  # ee = (y' - y) / delta
+            # print('ee',y_idx,':', ee[r_idx][y_idx - 1])
         print('Calculating EE finished.')    
-        #print('length of ee:', len(ee))
+        # print('length of ee:', len(ee))       
         
-        # Calculate Mu   
-        mu = array([], dtype=float32)
-        for r_idx in range(len(ee)):
-            if(len(mu) == 0):
-                mu = ee[r_idx]
-            else:
-                mu = abs(ee[r_idx] + mu)
-        mu = mu / len(ee)
-        print('Calculating Mu finished.')  
-        
-        
-        self.get_x(mu, [5,6], percentage, True)
-        #self.get_x(mu, 6, True)
-            
-    def get_x(self, mu, var, percentage, ordered):     # the number of var can be chosen from 1 to 9 to get different outputs  
+        self.get_results(ee, [5, 6], percentage, plots, True)
     
-        ord = zeros((len(mu), 9), dtype=object)
-        for idx in range(len(mu)):
-            if(isinstance(mu[idx],float)): 
-                ord[idx] = mu[idx]
+    def get_results(self, ee, var, percentage, plots, ordered):  # the number of var can be chosen from 1 to 9 to get different outputs  
+    
+        ord = zeros((len(ee), 9), dtype=object)
+        for idx in range(len(ee)):
+            if(isinstance(ee[idx], float)): 
+                ord[idx] = ee[idx]
             else:
-                ord[idx] = mu[idx].tolist()
-        #print(ord[:, var - 1:var].T)
+                ord[idx] = ee[idx].tolist()
+                
+        title = self.initTitles(percentage)
+        label = self.initLabels()
         
-        title = ['']*10
-        title[1]='voltage at the starting point at the percentage of ' + str(percentage*100)+'%'
-        title[2]='voltage at the end point at the percentage of ' + str(percentage*100)+'%'
-        title[3]='time at the starting point at the percentage of ' + str(percentage*100)+'%'
-        title[4]='time at the end point at the percentage of ' + str(percentage*100)+'%'
-        title[5]='time duration at the percentage of ' + str(percentage*100)+'%'
-        title[6]='amplitude voltage'
-        title[7]='maximum voltage'
-        title[8]='minimum voltage'
-        title[9]='time duration'
-        
-        import matplotlib.pyplot as plt
-        plt.figure(figsize=(30,30))
+        plt.figure(figsize=(30, 30))
         plt.tight_layout() 
-        plt.subplots_adjust(wspace =0, hspace =0.5)
-        
+        plt.subplots_adjust(wspace=0, hspace=0.5)
+        idx = 0
         for idx in range(len(var)):
             val_list = (ord[:, var[idx] - 1:var[idx]].T)[0] 
-            label_list = ['']*(len(mu))
+            label_list = [''] * (len(ee))
             sorted_list = dict() 
-            for mu_idx in range(len(mu)):
-                label_list[mu_idx] = 'x' + str(mu_idx+1);
-                sorted_list[label_list[mu_idx]] = val_list[mu_idx]        
+            for ee_idx in range(len(ee)):
+                label_list[ee_idx] = 'x' + str(ee_idx + 1)  # + '\n' + label[ee_idx];
+                sorted_list[label_list[ee_idx]] = val_list[ee_idx]        
             
             if(ordered):
-                sorted_list = dict(sorted(sorted_list.items(),key=lambda item:item[1],reverse=True))
+                sorted_list = dict(sorted(sorted_list.items(), key=lambda item:item[1], reverse=True))
                 label_list = list(sorted_list.keys())
                 val_list = sorted_list.values()
            
-        
-            plt.subplot(210+(idx+1))
+            plt.subplot(len(var) * 100 + 10 + (idx + 1))
             plt.title('Elementary Effect of ' + title[var[idx]])
-            #plt.xlabel('$x$')
-            plt.ylabel('$\mu$')
-            #y = arange(0.0,2.0,0.05)    
-            plt.xlim((-1, len(val_list)+1))
-            #plt.ylim((0, 2))
-            #plt.yticks(y)
-            bars = plt.bar(range(len(val_list)), val_list,color='steelblue',tick_label=label_list, alpha=0.75)
+            # plt.ylabel('$\ee$')  
+            # plt.xticks(rotation=45)
+            plt.xlim((-1, len(val_list) + 1))
+            bars = plt.bar(range(len(val_list)), val_list, color='steelblue', tick_label=label_list, alpha=0.75)
             for bar in bars:
-                plt.text(bar.get_x() + bar.get_width()/2, 0.55*bar.get_height(),'%f'%float(bar.get_height()), ha='center', rotation=45, va='bottom',fontsize=6)
-            
-#             plt.subplot(212)
-#             #plt.yticks(y)
-#             plt.xlim((-1, len(val_list)+1))
-#             #plt.ylim((0, 2))    
-#             plt.xlabel('$x$')
-#             plt.ylabel('$\mu$')
-#             for x, y in zip(label_list, val_list):
-#                 plt.text(x, 0.55*y, y, ha='center', va='bottom', rotation=45, fontsize=6, alpha=0.75)
-#             plt.scatter(label_list,val_list)
+                plt.text(bar.get_x() + bar.get_width() / 2, 0.55 * bar.get_height(), '%f' % float(bar.get_height()), ha='center', rotation=45, va='bottom', fontsize=6)
+
+        plt.show()  
         
+        #
+        plt.figure(figsize=(30, 30))
+        plt.tight_layout() 
+        plt.title('Action Potential at the percentage of ' + str(percentage * 100) + '%')
+        (legend_states, legend_algebraic, legend_voi, legend_constants) = self.createLegends()
+        plt.xlabel(legend_voi)
+        plt.ylabel(legend_algebraic[0])
+        plt.xlim(0, 2000)
+        for plot in plots:
+            plt.plot(vstack((plot)).T)
+            plt.legend(label, loc=1, borderaxespad=0.5, fontsize='7')
+        plt.show()  
         
-        plt.show()
 
 class Command:
     
     """\
     ------------------------------------------------------------
-    USE: python <PROGNAME> (options) -- e.g. Bueno.py -l 20 -t 4 -p 0.1
+    USE: python <PROGNAME> (options) -- e.g. Bueno.py -l 20 -p 0.1
     OPTIONS:
         -h : print this help message
         -l : the level of trajectory for Morris method (default: 20)
-        -t : the number of times Morris method runs (default: 4)
         -p : the percentage of the amplitude of Action Potential (default: 0)
         -o FILE : output results to file FILE (default: output to stdout)
     ------------------------------------------------------------\
@@ -431,9 +343,8 @@ class Command:
         
     def __init__(self):
         level = 20
-        time = 4
         percentage = 0
-        opts, args = getopt.getopt(sys.argv[1:],'hl:t:p:o:')        
+        opts, args = getopt.getopt(sys.argv[1:], 'hl:p:o:')        
         for opt, arg in opts:
         
             if '-h' == opt:
@@ -441,9 +352,6 @@ class Command:
             
             if '-l' == opt:
                 self.level = int(arg)
-                
-            if '-t' == opt:
-                self.time = int(arg)
                 
             if '-p' == opt:
                 self.percentage = float(arg)
@@ -455,20 +363,20 @@ class Command:
                 self.printHelp()
                 
     def printHelp(self):        
-        help = self.__doc__.replace('<PROGNAME>',sys.argv[0],1)
+        help = self.__doc__.replace('<PROGNAME>', sys.argv[0], 1)
         print(help, file=sys.stderr)
         sys.exit()    
 
+
 if __name__ == "__main__":
     config = Command()
-    #(init_states, constants) = initConsts()   
+    # (init_states, constants) = initConsts()   
     # plot_model(voi, states, algebraic)
     # (voi, states, algebraic) = solve_model()
     # getAmp(voi, algebraic)
     # getAmpPerc(voi, algebraic, 0.5)
     print('Morris starts.')
     bueno = Bueno()
-    bueno.morris(config.level, config.time, config.percentage)    
+    bueno.morris(config.level, config.percentage)    
     print('Morris ends.')
-
 
