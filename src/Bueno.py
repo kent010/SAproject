@@ -1,3 +1,10 @@
+'''
+Created on 16/06/2018
+
+@author: Lei Zhang
+
+'''
+
 # Size of variable arrays:
 sizeAlgebraic = 16
 sizeStates = 4
@@ -14,30 +21,26 @@ import matplotlib.pyplot as plt
 class Bueno:
 
     def createLegends(self):
-        legend_states = [""] * 0
-        legend_rates = [""] * sizeStates
-        legend_algebraic = [""] * 1
+        legend_algebraic = ['Vm in component membrane (mV)']
         legend_voi = "time in component environment (ms)"
-        legend_constants = [""] * sizeConstants        
-        legend_algebraic[0] = "Vm in component membrane (mV)"        
-        return (legend_states, legend_algebraic, legend_voi, legend_constants)
+        return (legend_algebraic, legend_voi)
         
     def initConsts(self):
         constants = [0.0] * sizeConstants; states = [0.0] * sizeStates; 
         constants[0] = 1  # epi in component environment (dimensionless)
         constants[1] = 0  # endo in component environment (dimensionless)
         constants[2] = 0  # mcell in component environment (dimensionless)
-        states[0] = 0  # u in component membrane (dimensionless)
+        states[0] = 0       # u in component membrane (dimensionless)
         constants[3] = -83  # V_0 in component membrane (mV)
         constants[4] = 2.7  # V_fi in component membrane (mV)
         constants[5] = 0.3  # u_m in component m (dimensionless)
-        constants[6] = 0.13  # u_p in component p (dimensionless)
-        states[1] = 1  # v in component fast_inward_current_v_gate (dimensionless)
-        constants[7] = 1.45  # tau_v_plus in component fast_inward_current_v_gate (ms)
-        states[2] = 1  # w in component slow_inward_current_w_gate (dimensionless)
-        states[3] = 0  # s in component slow_inward_current_s_gate (dimensionless)
-        constants[8] = 2.7342  # tau_s1 in component slow_inward_current_s_gate (ms)
-        constants[9] = 2.0994  # k_s in component slow_inward_current_s_gate (dimensionless)
+        constants[6] = 0.13 # u_p in component p (dimensionless)
+        states[1] = 1       # v in component fast_inward_current_v_gate (dimensionless)
+        constants[7] = 1.45 # tau_v_plus in component fast_inward_current_v_gate (ms)
+        states[2] = 1   # w in component slow_inward_current_w_gate (dimensionless)
+        states[3] = 0   # s in component slow_inward_current_s_gate (dimensionless)
+        constants[8] = 2.7342   # tau_s1 in component slow_inward_current_s_gate (ms)
+        constants[9] = 2.0994   # k_s in component slow_inward_current_s_gate (dimensionless)
         constants[10] = 0.9087  # u_s in component slow_inward_current_s_gate (dimensionless)
         constants[11] = self.custom_piecewise([equal(constants[0] , 1.00000), 16.0000 , equal(constants[1] , 1.00000), 2.00000 , True, 4.00000])
         # tau_s2 in component slow_inward_current_s_gate (ms)"
@@ -165,35 +168,26 @@ class Bueno:
         idxVMax = where(algebraic[0] == max(algebraic[0]))[0][0]  # Find the index of maximum value of voltage
         idxVMin = where(algebraic[0] == min(algebraic[0]))[0][0]  # Find the index of minimum value of voltage
         set_printoptions(precision=14)
-        vMax = algebraic[0][idxVMax]  # Get the maximum voltage
-        vMin = algebraic[0][idxVMin]  # Get the minimum voltage
-        vAmp = vMax - vMin  # Calculate the amplitude value
-        tStart = voi[0]  # Get the time starting from 0
-        tEnd = voi[idxVMax]  # Get the time ending at the maximum voltage
-        tGap = tEnd - tStart  # Calculate the duration from the start to the end
-        # print('vMax = ',vMax, 'vMin = ',vMin, 'vAmp = ',vAmp, 'tGap = ',tGap)
+        vMax = algebraic[0][idxVMax]        # Get the maximum voltage
+        vMin = algebraic[0][idxVMin]        # Get the minimum voltage
+        vAmp = vMax - vMin              # Calculate the amplitude value
+        tStart = voi[0]                 # Get the time starting from 0
+        tEnd = voi[idxVMax]             # Get the time ending at the maximum voltage
+        tGap = tEnd - tStart            # Calculate the duration from the start to the end
         return vAmp, vMax, vMin, idxVMax, tGap
         
     def getAmpPerc(self, voi, algebraic, percentage): 
         """Calculate amplitude of voltage by different percentages"""
-        vAmp, vMax, vMin, idxVMax, tGapAmp = self.getAmp(voi, algebraic)  # Get the amplitude of voltage
-        vAmpPerc = vAmp * (1 - percentage) + vMin  # Calculate the value of voltage by percentage
-        vAmpLeft = algebraic[0][0:idxVMax]  # Split the voltage array into a left and a right from the maximum point 
+        vAmp, vMax, vMin, idxVMax, tGapAmp = self.getAmp(voi, algebraic)    # Get the amplitude of voltage
+        vAmpPerc = vAmp * (1 - percentage) + vMin                           # Calculate the value of voltage by percentage
+        vAmpLeft = algebraic[0][0:idxVMax]                  # Split the voltage array into a left and a right from the maximum point 
         vAmpRight = algebraic[0][idxVMax + 1:]
-        idxVStart = (abs(vAmpLeft - vAmpPerc)).argmin()  # Calculate which value is closest to the percentage of the voltage and 
-        idxVEnd = (abs(vAmpRight - vAmpPerc)).argmin()  # Return the two indexes of the two voltages in the duration
-        tStart = voi[idxVStart]  # Calculate the time starting at the first value of voltage
-        tEnd = voi[idxVEnd + idxVMax + 1]  # Calculate the time ending at the second value of voltage
-        tGap = tEnd - tStart  # Calculate the duration of the two points - 
-        # print('vStart-1',algebraic[0][idxVStart-1])           # for testing the voltage, by using the neighboring voltage
-        # print('vStart',algebraic[0][idxVStart])
-        # print('vStart+1',algebraic[0][idxVStart+1])   
-        # print('vEnd-1',vAmpRight[idxVEnd-1])
-        # print('vEnd',vAmpRight[idxVEnd])
-        # print('vEnd+1',vAmpRight[idxVEnd+1])    
-        # print('vStart = ',vAmpLeft[idxVStart], 'vEnd = ',vAmpRight[idxVEnd], 'tStart = ', tStart, 'tEnd = ', tEnd)
-                        
-        return vAmpLeft[idxVStart], vAmpRight[idxVEnd], tStart, tEnd, tGap, vAmp, vMax, vMin, tGapAmp
+        idxVStart = (abs(vAmpLeft - vAmpPerc)).argmin()     # Calculate which value is closest to the percentage of the voltage and 
+        idxVEnd = (abs(vAmpRight - vAmpPerc)).argmin()      # Return the two indexes of the two voltages in the duration
+        tStart = voi[idxVStart]                             # Calculate the time starting at the first value of voltage
+        tEnd = voi[idxVEnd + idxVMax + 1]                   # Calculate the time ending at the second value of voltage
+        tGap = tEnd - tStart                                # Calculate the duration of the two points 
+        return vAmpLeft[idxVStart], vAmpRight[idxVEnd], tStart, tEnd, tGap, vAmp, vMax, vMin, tGapAmp    # Output 9 results 
         
     def custom_piecewise(self, cases):
         """Compute result of a piecewise function"""
@@ -225,63 +219,94 @@ class Bueno:
     
         # Compute algebraic variables
         algebraic = self.computeAlgebraic(constants, states, voi)
-        return (voi, states, algebraic)
-    
-    def morris(self, p, percentage):
+        return (voi, algebraic)
+
+    def calc_ee(self, r, lower, upper, delta, y):
+        ee = zeros((r, 30 - 1 - 25 ), dtype=object) # Debug number can be reduced
+        for idx_r in range(len(y)):
+            y_pre = array([], dtype=float32)
+            for idx_y in range(len(y[idx_r])):
+                val = array(y[idx_r][idx_y], dtype=float32)
+                if (len(y_pre) == 0):
+                    y_pre = val
+                else:
+                    delta_rescale = delta * (upper * y_pre - lower * y_pre) + lower * y_pre
+                    ee[idx_r][idx_y - 1] = (abs(val - y_pre)) / delta_rescale               # Calculate ee = (y' - y) / delta
+        print('Calculating EE finished.')
+        return ee
+
+    def calc_mu(self, ee):
+        mu = array([], dtype=float32)
+        for idx_r in range(len(ee)):
+            if (len(mu) == 0):
+                mu = ee[idx_r]
+            else:
+                mu = abs(ee[idx_r] + mu)
         
-        delta = 1 / (p - 1)  # Calculate delta according to Morris
-        xi = arange(0, p, delta)  # Initiate x base values 
+        mu = mu / len(ee)
+        #print('mu:', mu)
+        print('Calculating Mu finished.')
+        return mu
+
+    def calc_y(self, r, percentage, lower, upper, delta, xi):
         
-        print('Morris parameters - ', 'delta:', delta, ', p(level):', p, ', AP percentage:', percentage)
+        y = zeros((r, 30 - 25), dtype=object) # Debug number can be reduced     + 25
+        plots = zeros((r, 30 - 25 ), dtype=object)
+        for idx_r in range(r):
+            print('Calculating y when r is', idx_r, ':')
+            x = self.initConsts()[1]
+            x_original = self.initConsts()[1]
+            r_time = 0
+            x_rescale = self.initConsts()[1]
+            for idx in range(3, len(x) - 25 ):  # Debug number can be reduced
+                x[idx] = random.choice(xi)      # Choose base value randomly # Calculate x0 base
+                x_rescale[idx] = x[idx] * (upper * x_original[idx] - lower * x_original[idx]) + lower * x_original[idx]
+            
+            voi, algebraic = self.solve_model(x_rescale)    # Calculate y0 base
+            plots[idx_r][r_time] = algebraic
+            y[idx_r][r_time] = self.getAmpPerc(voi, algebraic, percentage)
+            print('y', r_time, ':', y[idx_r][r_time])
+            
+            for idx in range(3, len(x) - 25):   # Debug number can be reduced
+                x[idx] = x[idx] + delta         # Calculate x'
+                x_rescale[idx] = x[idx] * (upper * x_original[idx] - lower * x_original[idx]) + lower * x_original[idx]
+                voi, algebraic = self.solve_model(x_rescale)    # Calculate y'
+                plots[idx_r][r_time + 1] = algebraic
+                y[idx_r][r_time + 1] = self.getAmpPerc(voi, algebraic, percentage)
+                print('y', r_time + 1, ':', y[idx_r][r_time + 1])
+                r_time = r_time + 1
+        print('Calculating y finished.')
+        return y, plots
+
+    def morris(self, p, r, percentage, lower, upper):
+        """Apply Morris to Bueno"""
+        delta = 1 / (p - 1)         # Calculate delta according to Morris
+        xi = arange(0, 1, delta)    # Initiate x base values 
         
-        y = zeros((30 - 25 + 25), dtype=object)  # Debug number can be reduced     + 25 
-        # for idx_r in range(r):        
-            # print('Calculating y when r is', idx_r, ':')
-        x = self.initConsts()[1]
-        r_time = 0
-        (voi, states, algebraic) = self.solve_model(x)  # Calculate y0 base
-        plots = [algebraic] * sizeInputs
-        plots[0] = algebraic
-        y[r_time] = self.getAmpPerc(voi, algebraic, percentage)
-        # print('x',r_time,':',x)
-        print('y', r_time, ':', y[r_time])
+        print('Morris parameters - ', 'delta:', delta, ', p(level):', p, ', r(times):', r, ', AP percentage:', percentage, ', parameter range from', lower, '% -', upper, '%')
         
-        for idx in range(3, len(x) - 25 + 25):  # Debug number can be reduced            
-            x[idx] = x[idx] + delta  # Calculate x'
-            (voi, states, algebraic) = self.solve_model(x)  # Calculate y'
-            plots[r_time + 1] = algebraic
-            y[r_time + 1] = self.getAmpPerc(voi, algebraic, percentage)
-            # print('x',r_time,':',x)
-            print('y', r_time + 1, ':', y[r_time + 1])
-            r_time = r_time + 1    
-              
-        print('Calculating y finished.')  
+        y, plots = self.calc_y(r, percentage, lower, upper, delta, xi)  
         # Outputs(9 outputs): vAmpLeft[idxVStart], vAmpRight[idxVEnd], tStart, tEnd, tGap, vAmp, vMax, vMin, tGapAmp
         
-        # Calculate elementary effect
-        ee = zeros((30 - 1 - 25 + 25), dtype=object)  # Debug number can be reduced
         
-        y_pre = array([], dtype=float32)
-        for y_idx in range(len(y)):
-            val = array(y[y_idx], dtype=float32)
-            if(len(y_pre) == 0):
-                y_pre = val
-            else:
-                ee[y_idx - 1] = (abs(val - y_pre)) / delta  # ee = (y' - y) / delta
-            # print('ee',y_idx,':', ee[r_idx][y_idx - 1])
-        print('Calculating EE finished.')    
+        # Calculate elementary effect
+        ee = self.calc_ee(r, lower, upper, delta, y)    
         # print('length of ee:', len(ee))       
         
-        self.get_results(ee, [5, 6], percentage, plots, True)
+        # Calculate Mu   
+        mu = self.calc_mu(ee) 
+        
+        #self.getResults(mu, [5, 6], percentage, plots, True)
+        return mu, plots
     
-    def get_results(self, ee, var, percentage, plots, ordered):  # the number of var can be chosen from 1 to 9 to get different outputs  
+    def getResults(self, mu, var, r, percentage, plots, ordered):  
     
-        ord = zeros((len(ee), 9), dtype=object)
-        for idx in range(len(ee)):
-            if(isinstance(ee[idx], float)): 
-                ord[idx] = ee[idx]
+        li_ord = zeros((len(mu), 9), dtype=object)
+        for idx in range(len(mu)):
+            if(isinstance(mu[idx],float)): 
+                li_ord[idx] = mu[idx]
             else:
-                ord[idx] = ee[idx].tolist()
+                li_ord[idx] = mu[idx].tolist()
                 
         title = self.initTitles(percentage)
         label = self.initLabels()
@@ -290,13 +315,14 @@ class Bueno:
         plt.tight_layout() 
         plt.subplots_adjust(wspace=0, hspace=0.5)
         idx = 0
+        # Print the plot of sensitivity in mu
         for idx in range(len(var)):
-            val_list = (ord[:, var[idx] - 1:var[idx]].T)[0] 
-            label_list = [''] * (len(ee))
+            val_list = (li_ord[:, var[idx] - 1:var[idx]].T)[0] 
+            label_list = [''] * (len(mu))
             sorted_list = dict() 
-            for ee_idx in range(len(ee)):
-                label_list[ee_idx] = 'x' + str(ee_idx + 1)  # + '\n' + label[ee_idx];
-                sorted_list[label_list[ee_idx]] = val_list[ee_idx]        
+            for mu_idx in range(len(mu)):
+                label_list[mu_idx] = 'x' + str(mu_idx + 1)  
+                sorted_list[label_list[mu_idx]] = val_list[mu_idx]        
             
             if(ordered):
                 sorted_list = dict(sorted(sorted_list.items(), key=lambda item:item[1], reverse=True))
@@ -305,46 +331,69 @@ class Bueno:
            
             plt.subplot(len(var) * 100 + 10 + (idx + 1))
             plt.title('Elementary Effect of ' + title[var[idx]])
+            plt.ylabel('$\mu$')
             # plt.ylabel('$\ee$')  
             # plt.xticks(rotation=45)
             plt.xlim((-1, len(val_list) + 1))
             bars = plt.bar(range(len(val_list)), val_list, color='steelblue', tick_label=label_list, alpha=0.75)
             for bar in bars:
                 plt.text(bar.get_x() + bar.get_width() / 2, 0.55 * bar.get_height(), '%f' % float(bar.get_height()), ha='center', rotation=45, va='bottom', fontsize=6)
-
+        plt.savefig('data/sensitivity.png')        
         plt.show()  
         
-        #
+        
+        # Print the plot of action potential
+        plots_mean = zeros((r, 30 - 25), dtype=object)
+        for idx_r in range(len(plots)):
+            if(len(plots) == 0):
+                plots_mean = plots[idx_r]
+            else:
+                plots_mean = plots[idx_r] + plots_mean
+        plots_mean = plots_mean / len(plots)
+            
         plt.figure(figsize=(30, 30))
         plt.tight_layout() 
         plt.title('Action Potential at the percentage of ' + str(percentage * 100) + '%')
-        (legend_states, legend_algebraic, legend_voi, legend_constants) = self.createLegends()
+        (legend_algebraic, legend_voi) = self.createLegends()
         plt.xlabel(legend_voi)
         plt.ylabel(legend_algebraic[0])
         plt.xlim(0, 2000)
-        for plot in plots:
+        for plot in plots_mean:
             plt.plot(vstack((plot)).T)
             plt.legend(label, loc=1, borderaxespad=0.5, fontsize='7')
+        plt.savefig('data/ap.png') 
         plt.show()  
-        
+        print('Plots saved.')
+    
+    def save_file(self, mu):    # Save mu to file
+        file = open('data/mu.txt', 'w')
+        file.write(str(mu))
+        file.close( )
+        print('File saved.')
 
 class Command:
     
     """\
     ------------------------------------------------------------
-    USE: python <PROGNAME> (options) -- e.g. Bueno.py -l 20 -p 0.1
+    USE: python <PROGNAME> (options) -- e.g. Bueno.py -l 20 -t 4 -p 0.1 -x 150 -n 50
     OPTIONS:
         -h : print this help message
         -l : the level of trajectory for Morris method (default: 20)
+        -t : the number of times Morris method runs (default: 4)
         -p : the percentage of the amplitude of Action Potential (default: 0)
+        -x : the max percentage of the range of a parameter (default: 1.50 (150%))
+        -n : the min percentage of the range of a parameter (default: 0.5 (50%))
         -o FILE : output results to file FILE (default: output to stdout)
     ------------------------------------------------------------\
         """
         
+    level = 20
+    time = 4
+    percentage = 0
+    max = 150
+    min = 50
     def __init__(self):
-        level = 20
-        percentage = 0
-        opts, args = getopt.getopt(sys.argv[1:], 'hl:p:o:')        
+        opts, args = getopt.getopt(sys.argv[1:], 'hl:t:p:x:n:')        
         for opt, arg in opts:
         
             if '-h' == opt:
@@ -353,11 +402,24 @@ class Command:
             if '-l' == opt:
                 self.level = int(arg)
                 
+            if '-t' == opt:
+                self.time = int(arg)
+                
             if '-p' == opt:
                 self.percentage = float(arg)
                 if(self.percentage < 0 or self.percentage > 1.0):
                     print("*** ERROR: arguments, the percentage is between 0.0 and 1.0 ***", file=sys.stderr)
+            
+            if '-x' == opt:
+                self.max = float(arg)
+                if(self.max < 0):
+                    print("*** ERROR: arguments, the max percentage should be larger than 0 ***", file=sys.stderr)
                 
+            if '-n' == opt:
+                self.min = float(arg)
+                if(self.min < 0):
+                    print("*** ERROR: arguments, the min percentage should be larger than 0 ***", file=sys.stderr)
+            
             if len(args) > 0:
                 print("*** ERROR: arguments, please check the options below ***", file=sys.stderr)
                 self.printHelp()
@@ -370,13 +432,10 @@ class Command:
 
 if __name__ == "__main__":
     config = Command()
-    # (init_states, constants) = initConsts()   
-    # plot_model(voi, states, algebraic)
-    # (voi, states, algebraic) = solve_model()
-    # getAmp(voi, algebraic)
-    # getAmpPerc(voi, algebraic, 0.5)
     print('Morris starts.')
     bueno = Bueno()
-    bueno.morris(config.level, config.percentage)    
+    mu, plots = bueno.morris(config.level, config.time, config.percentage, config.min, config.max)  
+    bueno.getResults(mu, [5,6], config.time, config.percentage, plots, True)  
+    bueno.save_file(mu)
     print('Morris ends.')
 
