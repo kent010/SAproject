@@ -179,7 +179,7 @@ class Bueno:
     def getAmpPerc(self, voi, algebraic, percentage): 
         """Calculate amplitude of voltage by different percentages"""
         vAmp, vMax, vMin, idxVMax, tGapAmp = self.getAmp(voi, algebraic)    # Get the amplitude of voltage
-        vAmpPerc = vAmp * (1 - percentage) + vMin                           # Calculate the value of voltage by percentage
+        vAmpPerc = vAmp * percentage + vMin                           # Calculate the value of voltage by percentage
         vAmpLeft = algebraic[0][0:idxVMax]                  # Split the voltage array into a left and a right from the maximum point 
         vAmpRight = algebraic[0][idxVMax + 1:]
         idxVStart = (abs(vAmpLeft - vAmpPerc)).argmin()     # Calculate which value is closest to the percentage of the voltage and 
@@ -222,7 +222,7 @@ class Bueno:
         return (voi, algebraic)
 
     def calc_ee(self, r, lower, upper, delta, y):
-        ee = zeros((r, 30 - 1 - 25 ), dtype=object) # Debug number can be reduced
+        ee = zeros((r, sizeInputs), dtype=object) # Debug number can be reduced
         for idx_r in range(len(y)):
             y_pre = array([], dtype=float32)
             for idx_y in range(len(y[idx_r])):
@@ -250,25 +250,25 @@ class Bueno:
 
     def calc_y(self, r, percentage, lower, upper, delta, xi):
         
-        y = zeros((r, 30 - 25), dtype=object) # Debug number can be reduced     + 25
-        plots = zeros((r, 30 - 25 ), dtype=object)
+        y = zeros((r, sizeInputs), dtype=object) 
+        plots = zeros((r, sizeInputs), dtype=object)
         for idx_r in range(r):
             print('Calculating y when r is', idx_r, ':')
             x = self.initConsts()[1]
             x_original = self.initConsts()[1]
             r_time = 0
             x_rescale = self.initConsts()[1]
-            for idx in range(3, len(x) - 25 ):  # Debug number can be reduced
-                x[idx] = random.choice(xi)      # Choose base value randomly # Calculate x0 base
+            for idx in range(3, len(x)):  
+                x[idx] = random.choice(xi)                      # Choose base value randomly # Calculate x0 base
                 x_rescale[idx] = x[idx] * (upper * x_original[idx] - lower * x_original[idx]) + lower * x_original[idx]
             
-            voi, algebraic = self.solve_model(x_rescale)    # Calculate y0 base
+            voi, algebraic = self.solve_model(x_rescale)        # Calculate y0 base
             plots[idx_r][r_time] = algebraic
             y[idx_r][r_time] = self.getAmpPerc(voi, algebraic, percentage)
             print('y', r_time, ':', y[idx_r][r_time])
             
-            for idx in range(3, len(x) - 25):   # Debug number can be reduced
-                x[idx] = x[idx] + delta         # Calculate x'
+            for idx in range(3, len(x)):   
+                x[idx] = x[idx] + delta                         # Calculate x'
                 x_rescale[idx] = x[idx] * (upper * x_original[idx] - lower * x_original[idx]) + lower * x_original[idx]
                 voi, algebraic = self.solve_model(x_rescale)    # Calculate y'
                 plots[idx_r][r_time + 1] = algebraic
@@ -343,7 +343,7 @@ class Bueno:
         
         
         # Print the plot of action potential
-        plots_mean = zeros((r, 30 - 25), dtype=object)
+        plots_mean = zeros((r, sizeInputs), dtype=object)
         for idx_r in range(len(plots)):
             if(len(plots) == 0):
                 plots_mean = plots[idx_r]
@@ -375,7 +375,7 @@ class Command:
     
     """\
     ------------------------------------------------------------
-    USE: python <PROGNAME> (options) -- e.g. Bueno.py -l 20 -t 4 -p 0.1 -x 150 -n 50
+    USE: python <PROGNAME> (options) -- e.g. Bueno.py -l 20 -t 4 -p 0.1 -x 1.5 -n 0.5
     OPTIONS:
         -h : print this help message
         -l : the level of trajectory for Morris method (default: 20)
@@ -383,7 +383,6 @@ class Command:
         -p : the percentage of the amplitude of Action Potential (default: 0)
         -x : the max percentage of the range of a parameter (default: 1.50 (150%))
         -n : the min percentage of the range of a parameter (default: 0.5 (50%))
-        -o FILE : output results to file FILE (default: output to stdout)
     ------------------------------------------------------------\
         """
         
